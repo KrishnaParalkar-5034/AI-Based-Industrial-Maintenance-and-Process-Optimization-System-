@@ -1,0 +1,10 @@
+pandas
+numpy
+scikit-learn
+joblib
+matplotlib
+plotly
+streamlit
+kagglehub   # downloads the TEP dataset (ma7bakr/tep-dataset) automatically
+xgboost   # optional; the pipeline falls back to Random Forest + Logistic Regression if missing
+torch   # optional; enables the LSTM sequence model (skipped if missing)
