@@ -9,7 +9,7 @@ import pandas as pd
 
 from .ml_models import score_frame
 
-WARN_T, CRIT_T = 0.30, 0.60
+WARN_T, CRIT_T = 0.70, 0.85  # tuned on held-out runs; matches the dashboard defaults
 W_CLF, W_ANOM = 0.65, 0.35
 SMOOTH = 5  # samples; avoids alarm flicker
 
