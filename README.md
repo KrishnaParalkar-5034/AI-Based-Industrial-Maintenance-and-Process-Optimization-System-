@@ -169,12 +169,6 @@ The Streamlit dashboard includes four tabs:
 - The LSTM model (Stage 3b) is evaluated offline and is not part of the live risk score
 - All dashboard recommendations are **advisory only** — any action requires qualified plant personnel
 
----
 
-## 📄 License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-
----
 
 *Built as a decision-support prototype for industrial maintenance and process optimization.*
