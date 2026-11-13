@@ -1,0 +1,4 @@
+# This directory holds TEP dataset files (CSV or .dat).
+# See the README for download instructions.
+# Data files are git-ignored because they're too large for version control.
+

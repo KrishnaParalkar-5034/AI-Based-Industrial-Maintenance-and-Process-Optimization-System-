@@ -7,10 +7,16 @@ env/
 __pycache__/
 *.py[cod]
 *.egg-info/
+dist/
+build/
 
-# Generated model artifacts and outputs
+# Generated model artifacts and outputs (re-generate with train_model.py)
 models/
 outputs/
+
+# Data files (too large for git; see README for download instructions)
+data/*.csv
+data/*.dat
 
 # Streamlit / OS / editor
 .streamlit/secrets.toml
@@ -18,3 +24,5 @@ outputs/
 Thumbs.db
 .vscode/
 .idea/
+*.swp
+*.swo
