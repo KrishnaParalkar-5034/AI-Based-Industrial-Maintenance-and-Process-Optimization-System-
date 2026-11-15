@@ -6,14 +6,13 @@ Icons are designed on a 24x24 viewBox with configurable size, color, stroke, and
 
 ICONS = {
     "factory": (
-        '<rect x="2" y="14" width="20" height="8" rx="1"/>'
-        '<path d="M2 14V9l5 3V9l5 3V9l5 3V9h3v5"/>'
-        '<rect x="5" y="3" width="2.5" height="11" rx="1"/>'
-        '<rect x="11" y="1" width="2.5" height="13" rx="1"/>'
-        '<rect x="17" y="4" width="2.5" height="10" rx="1"/>'
-        '<rect x="5" y="17" width="2" height="3" rx="0.5"/>'
-        '<rect x="11" y="17" width="2" height="3" rx="0.5"/>'
-        '<rect x="17" y="17" width="2" height="3" rx="0.5"/>'
+        '<path d="M2 20h20"/>'
+        '<path d="M2 20V9l6 4V9l6 4V9l4-2v13"/>'
+        '<path d="M6 4v5"/>'
+        '<path d="M12 2v7"/>'
+        '<path d="M18 6v3"/>'
+        '<path d="M9 20v-4h3v4"/>'
+        '<path d="M15 20v-4h2v4"/>'
     ),
     "shield-check": (
         '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>'
@@ -137,16 +136,14 @@ ICONS = {
         '<circle cx="12" cy="12" r="5" fill="currentColor"/>'
     ),
     "gauge": (
-        '<path d="M12 2a10 10 0 1 0 10 10 10 10 0 0 0-10-10Z" />'
-        '<path d="M12 6v2" />'
-        '<path d="M6.34 7.76 7.75 9.17" />'
-        '<path d="M4 14h2" />'
-        '<path d="M6.34 20.24 7.75 18.83" />'
-        '<path d="M12 18v2" />'
-        '<path d="M17.66 20.24 16.25 18.83" />'
-        '<path d="M20 14h2" />'
-        '<path d="M17.66 7.76 16.25 9.17" />'
-        '<path d="m12 12 3-5" />'
+        '<path d="M12 22a9 9 0 1 1 0-18 9 9 0 0 1 0 18z"/>'
+        '<path d="M12 7v2"/>'
+        '<path d="M7.07 9.07l1.42 1.42"/>'
+        '<path d="M5 14h2"/>'
+        '<path d="M17 14h2"/>'
+        '<path d="M16.95 9.05l-1.41 1.42"/>'
+        '<path d="m12 14 2.5-4"/>'
+        '<circle cx="12" cy="14" r="1"/>'
     ),
     "tool": (
         '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'

@@ -640,7 +640,7 @@ with tab1:
         <div class="kpi-sub" style="margin-top:6px; display:flex; align-items:center; gap:4px;">
           <span>Anomaly:</span>
           {f'<span style="color:{C["CRITICAL"]};font-weight:600;display:inline-flex;align-items:center;gap:3px;">{icon_svg("alert-octagon", size=11, color=C["CRITICAL"])} Yes</span>'
-           if cur['anomaly'] else
+           if cur['anomaly'] > 0.5 else
            f'<span style="color:{C["NORMAL"]};font-weight:600;display:inline-flex;align-items:center;gap:3px;">{icon_svg("check-circle", size=11, color=C["NORMAL"])} No</span>'}
         </div>
       </div>
