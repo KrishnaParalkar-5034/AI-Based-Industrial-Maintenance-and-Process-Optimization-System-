@@ -14,6 +14,7 @@ from plotly.subplots import make_subplots
 import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from src.icons import icon_svg
 from src.ml_models import load_bundle
 from src.optimizer import assess_run, early_warning_report, recommendations
 
@@ -84,23 +85,34 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
 .hero-title {{
     font-size:1.8rem; font-weight:800; color:{C['TEXT']};
     margin:0; letter-spacing:-0.6px; line-height:1.2;
+    display:flex; align-items:center; gap:12px;
 }}
 .hero-title em {{ font-style:normal; color:{C['BLUE']}; }}
+.hero-icon-badge {{
+    width:38px; height:38px;
+    background:linear-gradient(135deg,rgba(79,142,247,0.2),rgba(168,85,247,0.12));
+    border:1px solid rgba(79,142,247,0.35);
+    border-radius:10px; display:inline-flex;
+    align-items:center; justify-content:center;
+    flex-shrink:0;
+    box-shadow:0 0 16px rgba(79,142,247,0.2);
+}}
 .hero-sub {{
     font-size:0.8rem; color:{C['MUTED']}; margin-top:6px;
     display:flex; align-items:center; gap:10px;
 }}
 .hero-pill {{
-    display:inline-flex; align-items:center; gap:5px;
+    display:inline-flex; align-items:center; gap:6px;
     background:rgba(79,142,247,0.12); border:1px solid rgba(79,142,247,0.28);
     border-radius:20px; padding:3px 12px;
     font-size:0.72rem; color:{C['BLUE']}; font-weight:600;
     letter-spacing:0.6px; text-transform:uppercase;
 }}
 .hero-time {{
-    font-size:0.75rem; color:{C['FAINT']};
+    font-size:0.75rem; color:{C['MUTED']};
     font-family:'JetBrains Mono',monospace;
     text-align:right;
+    display:flex; align-items:center; justify-content:flex-end; gap:6px;
 }}
 
 /* ── ALERT BANNER ── */
@@ -141,8 +153,9 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
     height:3px; border-radius:16px 16px 0 0;
 }}
 .kpi-bg-icon {{
-    position:absolute; bottom:-10px; right:10px;
-    font-size:4rem; opacity:0.04; user-select:none; pointer-events:none;
+    position:absolute; bottom:-6px; right:8px;
+    opacity:0.07; user-select:none; pointer-events:none;
+    display:flex; align-items:center; justify-content:center;
 }}
 .kpi-label {{
     font-size:0.7rem; color:{C['MUTED']}; text-transform:uppercase;
@@ -222,6 +235,11 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
     font-weight:500 !important; font-size:0.88rem !important;
     transition:all 0.2s !important; border:none !important;
 }}
+.stTabs [data-baseweb="tab"] span[data-testid="stIconMaterial"] {{
+    font-size:1.05rem !important;
+    vertical-align:-2px !important;
+    margin-right:6px !important;
+}}
 .stTabs [aria-selected="true"] {{
     background:linear-gradient(135deg,#162445,#122040) !important;
     color:{C['BLUE']} !important;
@@ -243,7 +261,7 @@ html, body, [class*="css"] {{ font-family:'Inter',sans-serif; }}
     border:1px solid {C['BORDER']};
     border-radius:8px; display:flex;
     align-items:center; justify-content:center;
-    font-size:0.9rem;
+    flex-shrink:0;
 }}
 
 /* ── SIDEBAR ── */
@@ -258,7 +276,14 @@ section[data-testid="stSidebar"] > div {{
     text-align:center; padding:14px 0 18px;
     border-bottom:1px solid {C['BORDER']}; margin-bottom:14px;
 }}
-.sb-logo-icon {{ font-size:2rem; line-height:1; }}
+.sb-logo-icon {{
+    display:flex; align-items:center; justify-content:center;
+    width:44px; height:44px; margin:0 auto 8px;
+    background:linear-gradient(135deg,rgba(79,142,247,0.18),rgba(168,85,247,0.10));
+    border:1px solid rgba(79,142,247,0.3);
+    border-radius:12px;
+    box-shadow:0 4px 16px rgba(79,142,247,0.15);
+}}
 .sb-logo-name {{
     font-size:1rem; font-weight:800; color:{C['BLUE']};
     letter-spacing:-0.3px; margin-top:4px;
@@ -268,9 +293,10 @@ section[data-testid="stSidebar"] > div {{
     text-transform:uppercase; letter-spacing:1.2px;
 }}
 .sb-section {{
-    font-size:0.68rem; font-weight:700; color:{C['FAINT']};
+    font-size:0.68rem; font-weight:700; color:{C['MUTED']};
     text-transform:uppercase; letter-spacing:1.2px;
     margin:14px 0 6px;
+    display:flex; align-items:center; gap:7px;
 }}
 .run-info {{
     background:{C['CARD']}; border:1px solid {C['BORDER']};
@@ -278,9 +304,12 @@ section[data-testid="stSidebar"] > div {{
 }}
 .run-info-row {{
     display:flex; justify-content:space-between; align-items:center;
-    font-size:0.75rem; padding:3px 0;
+    font-size:0.75rem; padding:4px 0;
 }}
-.run-info-label {{ color:{C['MUTED']}; }}
+.run-info-label {{
+    color:{C['MUTED']};
+    display:flex; align-items:center; gap:6px;
+}}
 .run-info-val {{ color:{C['TEXT']}; font-weight:600; font-family:'JetBrains Mono',monospace; }}
 
 /* ── METRIC CARDS ── */
@@ -386,9 +415,15 @@ def gauge_fig(value, title, max_val=1.0, suffix="", height=220, invert=False):
     return fig
 
 
-def sh(icon, text):
+def sh(icon, text, color=None):
+    if not color:
+        color = C["CRITICAL"] if ("alert" in str(icon) or "crit" in str(icon)) else C["BLUE"]
+    if isinstance(icon, str) and (icon.startswith("<svg") or icon.startswith("<span")):
+        icon_html = icon
+    else:
+        icon_html = icon_svg(icon, size=16, color=color, stroke_width=2.0)
     st.markdown(
-        f'<div class="sh"><div class="sh-icon">{icon}</div>{text}</div>',
+        f'<div class="sh"><div class="sh-icon">{icon_html}</div><span>{text}</span></div>',
         unsafe_allow_html=True,
     )
 
@@ -418,14 +453,17 @@ now_str = datetime.now().strftime("%d %b %Y  %H:%M:%S")
 st.markdown(f"""
 <div class="hero">
   <div>
-    <div class="hero-title">🏭 AI-Based <em>Industrial Maintenance</em> &amp; Process Optimization</div>
+    <div class="hero-title">
+      <span class="hero-icon-badge">{icon_svg('factory', size=22, color=C['BLUE'], stroke_width=2.2)}</span>
+      <span>AI-Based <em>Industrial Maintenance</em> &amp; Process Optimization</span>
+    </div>
     <div class="hero-sub">
-      <span class="hero-pill">🔒 Advisory Mode</span>
+      <span class="hero-pill">{icon_svg('shield-check', size=13, color=C['BLUE'], stroke_width=2.2)} Advisory Mode</span>
       <span>Predictive maintenance · Anomaly detection · Decision support</span>
     </div>
   </div>
   <div>
-    <div class="hero-time">🕐 {now_str}</div>
+    <div class="hero-time">{icon_svg('clock', size=13, color=C['MUTED'], stroke_width=2.0)} {now_str}</div>
     <div style="margin-top:6px;text-align:right;">
       <span class="hero-pill">v2.0</span>
     </div>
@@ -434,7 +472,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 if bundle is None:
-    st.error("⚠️ No trained model found. Run `python src/train_model.py` first.")
+    st.error("No trained model found. Run `python src/train_model.py` first.", icon=":material/error:")
     st.stop()
 
 # ════════════════════════════════════════════════════════════════════
@@ -445,28 +483,28 @@ test = bundle["test"]
 with st.sidebar:
     st.markdown(f"""
     <div class="sb-logo">
-      <div class="sb-logo-icon">⚙️</div>
+      <div class="sb-logo-icon">{icon_svg('settings', size=24, color=C['BLUE'], stroke_width=2.0)}</div>
       <div class="sb-logo-name">Control Panel</div>
       <div class="sb-logo-ver">AI Maintenance System</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="sb-section">📡 Data Source</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sb-section">{icon_svg("database", size=13, color=C["BLUE"])} Data Source</div>', unsafe_allow_html=True)
     st.caption(f"`{bundle['source']}`")
     run_id = st.selectbox("Simulation Run", sorted(test["run_id"].unique()), label_visibility="collapsed")
 
-    st.markdown('<div class="sb-section">🎚 Alarm Thresholds</div>', unsafe_allow_html=True)
-    warn_t = st.slider("Warning threshold ⚠️", 0.10, 0.90, 0.70, 0.05,
+    st.markdown(f'<div class="sb-section">{icon_svg("sliders", size=13, color=C["BLUE"])} Alarm Thresholds</div>', unsafe_allow_html=True)
+    warn_t = st.slider("Warning threshold", 0.10, 0.90, 0.70, 0.05,
                        help="Alarm fires when risk score crosses this value.")
-    crit_t = st.slider("Critical threshold 🔴", 0.20, 1.00, 0.85, 0.05)
+    crit_t = st.slider("Critical threshold", 0.20, 1.00, 0.85, 0.05)
     if crit_t <= warn_t:
-        st.warning("Critical must be > Warning threshold.")
+        st.warning("Critical must be > Warning threshold.", icon=":material/warning:")
 
-    st.markdown('<div class="sb-section">📊 Telemetry Channels</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sb-section">{icon_svg("activity", size=13, color=C["BLUE"])} Telemetry Channels</div>', unsafe_allow_html=True)
     sensors = st.multiselect("Sensors", bundle["sensors"],
                              default=bundle["sensors"][:4], label_visibility="collapsed")
 
-    st.markdown('<div class="sb-section">▶ Playback</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sb-section">{icon_svg("play", size=13, color=C["BLUE"])} Playback</div>', unsafe_allow_html=True)
     play  = st.checkbox("Auto-play live feed")
     speed = st.slider("Samples / refresh", 1, 10, 3)
 
@@ -477,7 +515,7 @@ if st.session_state.get("run") != run_id:
     st.session_state.run, st.session_state.t = run_id, 0
 if play:
     st.session_state.t = min(st.session_state.get("t", 0) + speed, n - 1)
-t = st.sidebar.slider("⏱ Time step", 0, n - 1, key="t")
+t = st.sidebar.slider("Time step", 0, n - 1, key="t")
 
 cur     = assessed.iloc[t]
 status  = cur["status"]
@@ -486,7 +524,7 @@ history = assessed.iloc[:t + 1]
 n_warn = int((history["status"] == "WARNING").sum())
 n_crit = int((history["status"] == "CRITICAL").sum())
 
-st.sidebar.markdown('<div class="sb-section">📋 Run Summary</div>', unsafe_allow_html=True)
+st.sidebar.markdown(f'<div class="sb-section">{icon_svg("clipboard-list", size=13, color=C["BLUE"])} Run Summary</div>', unsafe_allow_html=True)
 st.sidebar.markdown(f"""
 <div class="run-info">
   <div class="run-info-row">
@@ -498,11 +536,11 @@ st.sidebar.markdown(f"""
     <span class="run-info-val">{t+1} / {n}</span>
   </div>
   <div class="run-info-row">
-    <span class="run-info-label">⚠ Warnings</span>
+    <span class="run-info-label">{icon_svg('alert-triangle', size=12, color=C['WARNING'])} Warnings</span>
     <span class="run-info-val" style="color:{C['WARNING']}">{n_warn}</span>
   </div>
   <div class="run-info-row">
-    <span class="run-info-label">🔴 Criticals</span>
+    <span class="run-info-label">{icon_svg('alert-octagon', size=12, color=C['CRITICAL'])} Criticals</span>
     <span class="run-info-val" style="color:{C['CRITICAL']}">{n_crit}</span>
   </div>
   <div class="run-info-row">
@@ -516,22 +554,24 @@ st.sidebar.markdown(f"""
 # ALERT BANNER
 # ════════════════════════════════════════════════════════════════════
 if status != "NORMAL":
-    icon = "⚠️" if status == "WARNING" else "🚨"
+    icon = (icon_svg("alert-triangle", size=20, color=C["WARNING"], stroke_width=2.2)
+            if status == "WARNING"
+            else icon_svg("alert-octagon", size=20, color=C["CRITICAL"], stroke_width=2.2))
     msg  = (f"Plant in <strong>{status}</strong> state — "
             f"Risk score <strong>{cur['risk']:.2f}</strong>, "
             f"failure probability <strong>{cur['p_fail']:.0%}</strong>. "
             f"Engineer review required.")
-    st.markdown(f'<div class="alert-banner {status}">{icon}&nbsp; {msg}</div>',
+    st.markdown(f'<div class="alert-banner {status}">{icon}&nbsp; <div>{msg}</div></div>',
                 unsafe_allow_html=True)
 
 # ════════════════════════════════════════════════════════════════════
 # TABS
 # ════════════════════════════════════════════════════════════════════
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📊  Live Overview",
-    "📈  Telemetry",
-    "⚠️  Predictions & Alerts",
-    "🛠️  Decision Support",
+    ":material/monitoring: Live Overview",
+    ":material/show_chart: Telemetry",
+    ":material/warning: Predictions & Alerts",
+    ":material/build: Decision Support",
 ])
 
 # ──────────────────────────────────────────────────────────────────
@@ -545,7 +585,6 @@ with tab1:
     sa = {"NORMAL": "00d26a", "WARNING": "ffb300", "CRITICAL": "ff4d4d"}.get(status, "4f8ef7")
     ha = "00d26a" if health >= 70 else ("ffb300" if health >= 40 else "ff4d4d")
     pa = "ff4d4d" if pfail > 0.5 else "00d26a"
-    delta_arrow = "▲" if risk_delta > 0 else "▼"
     delta_color = "#ff4d4d" if risk_delta > 0 else "#00d26a"
 
     st.markdown(f"""
@@ -553,20 +592,22 @@ with tab1:
 
       <div class="kpi">
         <div class="kpi-bar" style="background:linear-gradient(90deg,#{sa},#{sa}88);"></div>
-        <div class="kpi-bg-icon">🏭</div>
+        <div class="kpi-bg-icon">{icon_svg("factory", size=76, color=f"#{sa}", stroke_width=1.3)}</div>
         <div class="kpi-label">Plant Status</div>
         <div class="status-badge s{status[0]}">
           <span class="dot" style="background:#{sa};"></span>
           {status}
         </div>
-        <div class="kpi-sub" style="margin-top:8px;">
-          ⚠ {n_warn} warnings &nbsp;·&nbsp; 🔴 {n_crit} criticals
+        <div class="kpi-sub" style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+          <span style="display:inline-flex;align-items:center;gap:4px;">{icon_svg("alert-triangle", size=11, color=C['WARNING'])} {n_warn} warnings</span>
+          <span style="color:{C['FAINT']};">·</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;">{icon_svg("alert-octagon", size=11, color=C['CRITICAL'])} {n_crit} criticals</span>
         </div>
       </div>
 
       <div class="kpi">
         <div class="kpi-bar" style="background:linear-gradient(90deg,#{ha},#{ha}88);"></div>
-        <div class="kpi-bg-icon">💚</div>
+        <div class="kpi-bg-icon">{icon_svg("heart-pulse", size=76, color=f"#{ha}", stroke_width=1.3)}</div>
         <div class="kpi-label">Equipment Health Index</div>
         <div class="kpi-value">{health:.0f}<span style="font-size:1rem;color:{C['MUTED']};font-family:Inter;"> / 100</span></div>
         <div class="prog-wrap">
@@ -576,11 +617,12 @@ with tab1:
 
       <div class="kpi">
         <div class="kpi-bar" style="background:linear-gradient(90deg,{C['BLUE']},{C['BLUE']}88);"></div>
-        <div class="kpi-bg-icon">📉</div>
+        <div class="kpi-bg-icon">{icon_svg("trending-up", size=76, color=C['BLUE'], stroke_width=1.3)}</div>
         <div class="kpi-label">Risk Score</div>
         <div class="kpi-value">{cur['risk']:.3f}</div>
-        <div class="kpi-delta" style="color:{delta_color};">
-          {delta_arrow} {abs(risk_delta):.3f} vs 5 steps ago
+        <div class="kpi-delta" style="color:{delta_color}; display:flex; align-items:center; gap:4px;">
+          {icon_svg("trending-up" if risk_delta > 0 else "trending-down", size=12, color=delta_color)}
+          {abs(risk_delta):.3f} vs 5 steps ago
         </div>
         <div class="prog-wrap">
           <div class="prog-fill" style="width:{cur['risk']*100:.0f}%;background:linear-gradient(90deg,{C['BLUE']},{C['BLUE']}bb);"></div>
@@ -589,14 +631,17 @@ with tab1:
 
       <div class="kpi">
         <div class="kpi-bar" style="background:linear-gradient(90deg,#{pa},#{pa}88);"></div>
-        <div class="kpi-bg-icon">⚡</div>
+        <div class="kpi-bg-icon">{icon_svg("zap", size=76, color=f"#{pa}", stroke_width=1.3)}</div>
         <div class="kpi-label">Failure Probability</div>
         <div class="kpi-value">{pfail:.1%}</div>
         <div class="prog-wrap">
           <div class="prog-fill" style="width:{pfail*100:.0f}%;background:linear-gradient(90deg,#{pa},#{pa}bb);"></div>
         </div>
-        <div class="kpi-sub" style="margin-top:4px;">
-          Anomaly: {'Yes 🔴' if cur['anomaly'] else 'No ✅'}
+        <div class="kpi-sub" style="margin-top:6px; display:flex; align-items:center; gap:4px;">
+          <span>Anomaly:</span>
+          {f'<span style="color:{C["CRITICAL"]};font-weight:600;display:inline-flex;align-items:center;gap:3px;">{icon_svg("alert-octagon", size=11, color=C["CRITICAL"])} Yes</span>'
+           if cur['anomaly'] else
+           f'<span style="color:{C["NORMAL"]};font-weight:600;display:inline-flex;align-items:center;gap:3px;">{icon_svg("check-circle", size=11, color=C["NORMAL"])} No</span>'}
         </div>
       </div>
 
@@ -634,12 +679,12 @@ with tab1:
                     hovertemplate=f"{s_name} @ %{{x}}<extra></extra>",
                 ))
         fig.add_hline(y=warn_t, line_dash="dash", line_color=C["WARNING"], line_width=1.5,
-                      annotation_text=f"⚠ {warn_t:.2f}",
-                      annotation_font=dict(color=C["WARNING"], size=10),
+                      annotation_text=f"WARN {warn_t:.2f}",
+                      annotation_font=dict(color=C["WARNING"], size=10, family="JetBrains Mono"),
                       annotation_position="top left")
         fig.add_hline(y=crit_t, line_dash="dash", line_color=C["CRITICAL"], line_width=1.5,
-                      annotation_text=f"🔴 {crit_t:.2f}",
-                      annotation_font=dict(color=C["CRITICAL"], size=10),
+                      annotation_text=f"CRIT {crit_t:.2f}",
+                      annotation_font=dict(color=C["CRITICAL"], size=10, family="JetBrains Mono"),
                       annotation_position="top left")
         layout = dark_layout(h=220, t=12, b=36)
         layout["yaxis"]["range"]  = [0, 1]
@@ -652,7 +697,7 @@ with tab1:
         st.plotly_chart(fig, width="stretch")
 
     # ── Sensor Status Grid ──────────────────────────────────────────
-    sh("📡", "Live Sensor Readings")
+    sh("sensors", "Live Sensor Readings")
     tiles_html = '<div class="sensor-grid">'
     for idx, s in enumerate(bundle["sensors"]):
         val       = float(run.iloc[t][s])
@@ -721,13 +766,13 @@ with tab2:
 # TAB 3 — Predictions & Alerts
 # ──────────────────────────────────────────────────────────────────
 with tab3:
-    sh("🚨", "Detected Anomalies / Alerts So Far")
+    sh("alert-octagon", "Detected Anomalies / Alerts So Far", color=C["CRITICAL"])
     alerts = history[history["status"] != "NORMAL"][["sample","status","risk","p_fail","anomaly"]]
     if alerts.empty:
-        st.success("✅ No alerts raised in this run so far.")
+        st.success("No alerts raised in this run so far.", icon=":material/check_circle:")
     else:
         first = alerts.iloc[0]
-        st.warning(f"⚠️ First alert at sample **{int(first['sample'])}** — Status: **{first['status']}**")
+        st.warning(f"First alert at sample **{int(first['sample'])}** — Status: **{first['status']}**", icon=":material/warning:")
         st.dataframe(
             alerts.round(3).tail(50).style.map(
                 lambda v: (f"color:{C['CRITICAL']};font-weight:700" if v == "CRITICAL"
@@ -753,7 +798,7 @@ with tab3:
         st.plotly_chart(risk_hist, width="stretch")
 
     st.divider()
-    sh("📉", "Model Evaluation (held-out 20% test runs)")
+    sh("bar-chart", "Model Evaluation (held-out 20% test runs)")
     m = pd.DataFrame(bundle["metrics"]).T[["precision","recall","f1","tp","fp","fn","tn"]]
     f1_fig = go.Figure(go.Bar(
         x=m.index, y=m["f1"],
@@ -774,10 +819,16 @@ with tab3:
     f1_fig.update_layout(**layout)
     st.plotly_chart(f1_fig, width="stretch")
     st.dataframe(m.round(3), width="stretch")
-    st.caption(f"🤖 Classifier: **{bundle['classifier_name']}** · Isolation Forest for anomaly scoring")
+    st.markdown(
+        f'<div style="font-size:0.8rem;color:{C["MUTED"]};display:flex;align-items:center;gap:7px;margin-top:8px;">'
+        f'{icon_svg("cpu", size=15, color=C["BLUE"], stroke_width=2.0)} '
+        f'<span>Classifier: <strong style="color:{C["TEXT"]};">{bundle["classifier_name"]}</strong> &nbsp;·&nbsp; Isolation Forest for anomaly scoring</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     st.divider()
-    sh("⏱️", "Early-Warning Performance")
+    sh("timer", "Early-Warning Performance")
     summary, per_run = get_early_warning(bundle, warn_t, crit_t)
     e1, e2, e3, e4 = st.columns(4)
     e1.metric("Faulty Runs Detected", f"{summary['detected']} / {summary['faulty_runs']}")
@@ -787,11 +838,11 @@ with tab3:
               "—" if med is None else f"{med:.0f} smp · {summary['median_delay_minutes']:.0f} min")
     e4.metric("False Alarms",
               f"{summary['normal_false_alarms']} norm + {summary['pre_onset_false_alarms']} pre")
-    with st.expander("🔍 Per-run Detection Detail"):
+    with st.expander("Per-run Detection Detail", icon=":material/troubleshoot:"):
         st.dataframe(per_run, width="stretch", hide_index=True)
 
     st.divider()
-    sh("📊", "Feature Importance — Which Sensors Drive Predictions")
+    sh("activity", "Feature Importance — Which Sensors Drive Predictions")
     imp = bundle.get("importances")
     if imp is None:
         st.info("No feature importance available for this model type.")
@@ -815,14 +866,20 @@ with tab3:
         layout["yaxis"]["tickfont"] = dict(color=C["TEXT"], size=11)
         fig_imp.update_layout(**layout)
         st.plotly_chart(fig_imp, width="stretch")
-        st.caption("📌 Higher importance = model relies more on this sensor when detecting faults.")
+        st.markdown(
+            f'<div style="font-size:0.8rem;color:{C["MUTED"]};display:flex;align-items:center;gap:7px;margin-top:8px;">'
+            f'{icon_svg("info", size=14, color=C["BLUE"], stroke_width=2.0)} '
+            f'<span>Higher importance = model relies more on this sensor when detecting faults.</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
 # ──────────────────────────────────────────────────────────────────
 # TAB 4 — Decision Support
 # ──────────────────────────────────────────────────────────────────
 with tab4:
     rec = recommendations(bundle, run, assessed, t)
-    sh("🛠️", "Maintenance Recommendations — For Engineer Review")
+    sh("wrench", "Maintenance Recommendations — For Engineer Review")
 
     rec_colors = {
         "NORMAL":   (C["NORMAL"],   "rgba(0,210,106,0.08)"),
@@ -838,7 +895,7 @@ with tab4:
     </div>
     """, unsafe_allow_html=True)
 
-    sh("🔍", "Variables Deviating Most from Normal")
+    sh("search", "Variables Deviating Most from Normal")
     st.dataframe(rec["items"], width="stretch", hide_index=True)
 
     st.markdown(f"""
@@ -846,7 +903,10 @@ with tab4:
                 border-left:4px solid {C['BLUE']};border-radius:12px;
                 padding:14px 20px;margin-top:20px;">
       <div style="font-size:0.8rem;color:{C['TEXT']};line-height:1.7;">
-        🔒 <strong style="color:{C['TEXT']};">Advisory Notice</strong><br>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          {icon_svg("shield-check", size=16, color=C["BLUE"], stroke_width=2.2)}
+          <strong style="color:{C['TEXT']};">Advisory Notice</strong>
+        </div>
         <span style="color:{C['MUTED']};">
         All recommendations are <strong>decision-support only</strong> and do not control any equipment.
         Any corrective action must be reviewed, approved, and executed by qualified plant personnel.
@@ -861,10 +921,10 @@ with tab4:
 pct_done = (t + 1) / n * 100
 st.markdown(f"""
 <div class="footer">
-  <div>
-    🏭 <strong>AI Industrial Maintenance System</strong> &nbsp;·&nbsp;
-    Decision-support prototype &nbsp;·&nbsp;
-    <span>Does not control plant equipment</span>
+  <div style="display:flex;align-items:center;gap:8px;">
+    {icon_svg("factory", size=15, color=C["MUTED"], stroke_width=2.0)}
+    <strong style="color:{C['MUTED']};">AI Industrial Maintenance System</strong> &nbsp;·&nbsp;
+    <span>Decision-support prototype &nbsp;·&nbsp; Does not control plant equipment</span>
   </div>
   <div style="display:flex;align-items:center;gap:16px;">
     <span>Run <strong>{run_id}</strong></span>
