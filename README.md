@@ -2,6 +2,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-red.svg)](https://streamlit.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An end-to-end **AI-powered decision-support system** for predictive maintenance and process optimization in continuous chemical/petrochemical plants. Built on the **Tennessee Eastman Process (TEP)** benchmark dataset.
 
@@ -171,3 +172,11 @@ The Streamlit dashboard includes four tabs:
 
 
 *Built as a decision-support prototype for industrial maintenance and process optimization.*
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2026 Krishna Paralkar
