@@ -10,11 +10,13 @@ import io
 import json
 import os
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, File, HTTPException, Query, Response, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 import numpy as np
 import pandas as pd
 from sqlalchemy import desc, func
@@ -56,6 +58,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Deployment Expiry Guardrail (72-hour auto-kill demo window)
+APP_EXPIRES_AT_STR = os.environ.get("APP_EXPIRES_AT", "").strip()
+APP_EXPIRES_AT: Optional[datetime] = None
+if APP_EXPIRES_AT_STR:
+    try:
+        clean_str = APP_EXPIRES_AT_STR.replace("Z", "+00:00")
+        APP_EXPIRES_AT = datetime.fromisoformat(clean_str)
+        if APP_EXPIRES_AT.tzinfo is None:
+            APP_EXPIRES_AT = APP_EXPIRES_AT.replace(tzinfo=timezone.utc)
+        print(f"[SECURITY] APP_EXPIRES_AT active: {APP_EXPIRES_AT.isoformat()}")
+    except Exception as e:
+        print(f"[WARNING] Could not parse APP_EXPIRES_AT='{APP_EXPIRES_AT_STR}': {e}")
+
+
+@app.middleware("http")
+async def check_deployment_expiry_middleware(request, call_next):
+    if APP_EXPIRES_AT is not None:
+        path = request.url.path
+        if path not in ("/health", "/health/"):
+            now_utc = datetime.now(timezone.utc)
+            if now_utc >= APP_EXPIRES_AT:
+                return Response(
+                    content=json.dumps({
+                        "detail": "Deployment demo window expired",
+                        "status": 503,
+                        "expires_at": APP_EXPIRES_AT_STR,
+                        "current_time_utc": now_utc.isoformat()
+                    }),
+                    status_code=503,
+                    media_type="application/json"
+                )
+    return await call_next(request)
+
 # Active WebSocket connections registry
 active_connections: List[WebSocket] = []
 
@@ -66,7 +101,7 @@ active_connections: List[WebSocket] = []
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
-    """Check service health, database connection, and model loading status."""
+    """Check service health, database connection, model loading status, and deployment expiry window."""
     db_ok = False
     try:
         db.execute(func.now())
@@ -75,13 +110,18 @@ def health_check(db: Session = Depends(get_db)):
         db_ok = False
 
     models_loaded = engine_instance.bundle is not None
+    now_utc = datetime.now(timezone.utc)
+    is_expired = (APP_EXPIRES_AT is not None) and (now_utc >= APP_EXPIRES_AT)
+    status_str = "expired" if is_expired else ("healthy" if (db_ok and models_loaded) else "degraded")
     return {
-        "status": "healthy" if (db_ok and models_loaded) else "degraded",
+        "status": status_str,
         "database_connected": db_ok,
         "models_loaded": models_loaded,
         "current_run": engine_instance.adapter.get_current_run_id() if engine_instance.adapter else None,
         "advisory_mode": True,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "expires_at": APP_EXPIRES_AT_STR or None,
+        "is_expired": is_expired,
+        "timestamp": now_utc.isoformat()
     }
 
 
@@ -241,6 +281,15 @@ async def websocket_telemetry_stream(websocket: WebSocket):
     Pushes comprehensive TelemetryFrame JSON payloads with 52 sensor values,
     deviations, signal quality, risk, ISA-18.2 regimes, and 21-class diagnostics.
     """
+    if APP_EXPIRES_AT is not None and datetime.now(timezone.utc) >= APP_EXPIRES_AT:
+        await websocket.accept()
+        try:
+            await websocket.send_json({"error": "Deployment demo window expired", "status": 503})
+        except Exception:
+            pass
+        await websocket.close(code=1008, reason="Deployment demo window expired")
+        return
+
     await websocket.accept()
     active_connections.append(websocket)
     print(f"[ws] Client connected. Total active clients: {len(active_connections)}")
@@ -867,3 +916,41 @@ def reset_demo_database(db: Session = Depends(get_db)):
     engine_instance.last_persisted_run_step = None
 
     return {"status": "success", "message": "Demo database successfully reset and historian cleared."}
+
+
+# ==============================================================================
+# STATIC FRONTEND SPA SERVING (Single-Container Production Mode)
+# ==============================================================================
+
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if (FRONTEND_DIST / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa_catchall(full_path: str):
+    """
+    Serve compiled React SPA assets with client-side routing fallback.
+    Registered strictly AFTER all /api, /ws, /health, /metrics routes.
+    """
+    candidate = (FRONTEND_DIST / full_path).resolve()
+    try:
+        candidate.relative_to(FRONTEND_DIST.resolve())
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+    except ValueError:
+        pass
+
+    index_file = FRONTEND_DIST / "index.html"
+    if index_file.is_file():
+        return FileResponse(index_file)
+
+    return HTMLResponse(
+        "<html><head><title>TEP SCADA Platform</title></head>"
+        "<body style='font-family: sans-serif; background: #0f172a; color: #f8fafc; padding: 40px;'>"
+        "<h2>🏭 TEP SCADA Platform Service Online</h2>"
+        "<p>FastAPI backend APIs and WebSocket streaming are fully operational.</p>"
+        "<p><em>Note: Frontend SPA dist bundle not detected at this mount path.</em></p>"
+        "</body></html>",
+        status_code=200
+    )

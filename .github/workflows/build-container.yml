@@ -1,0 +1,33 @@
+name: Build and Push TEP SCADA Container
+
+on:
+  push:
+    branches:
+      - feat/tep-scada-platform
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push container image
+        run: |
+          IMAGE_NAME="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')/tep-scada:v1"
+          echo "Building $IMAGE_NAME..."
+          docker build -t "$IMAGE_NAME" .
+          echo "Pushing $IMAGE_NAME..."
+          docker push "$IMAGE_NAME"

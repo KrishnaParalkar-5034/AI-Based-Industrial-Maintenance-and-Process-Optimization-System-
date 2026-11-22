@@ -16,8 +16,18 @@ export function useTelemetrySocket() {
     function connect() {
       if (unmounted) return;
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/telemetry`;
+      const customBase = import.meta.env.VITE_API_BASE_URL;
+      let wsUrl: string;
+      if (customBase) {
+        const wsProto = customBase.startsWith('https') ? 'wss:' : 'ws:';
+        const cleanHost = customBase.replace(/^https?:\/\//, '').replace(/\/$/, '');
+        wsUrl = `${wsProto}//${cleanHost}/ws/telemetry`;
+      } else if (import.meta.env.PROD) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${window.location.host}/ws/telemetry`;
+      } else {
+        wsUrl = 'ws://127.0.0.1:8000/ws/telemetry';
+      }
 
       const ws = new WebSocket(wsUrl);
       socketRef.current = ws;
