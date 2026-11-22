@@ -1,0 +1,87 @@
+{
+  "Pillar 1: XGBoost (Binary)": {
+    "precision": 0.8892,
+    "recall": 0.8318,
+    "f1": 0.8595,
+    "tp": 13974,
+    "fp": 1741,
+    "fn": 2826,
+    "tn": 2579,
+    "roc_auc": 0.8232
+  },
+  "Pillar 1: XGBoost (21-Class Multiclass)": {
+    "macro_f1": 0.6667,
+    "weighted_f1": 0.6667,
+    "per_fault_f1": {
+      "0": 0.1461,
+      "1": 0.8888,
+      "2": 0.8755,
+      "3": 0.2226,
+      "4": 0.8918,
+      "5": 0.8975,
+      "6": 0.9035,
+      "7": 0.9003,
+      "8": 0.7056,
+      "9": 0.1249,
+      "10": 0.3549,
+      "11": 0.8903,
+      "12": 0.8651,
+      "13": 0.2525,
+      "14": 0.906,
+      "15": 0.1494,
+      "16": 0.531,
+      "17": 0.8891,
+      "18": 0.793,
+      "19": 0.8993,
+      "20": 0.682,
+      "21": 0.8991
+    }
+  },
+  "Pillar 2: LSTM-FCN (Temporal Sequence)": {
+    "precision": 1.0,
+    "recall": 0.1881,
+    "f1": 0.3166,
+    "tp": 632,
+    "fp": 0,
+    "fn": 2728,
+    "tn": 798,
+    "roc_auc": 0.7693
+  },
+  "Pillar 3: Autoencoder (Novelty MSE)": {
+    "precision": 0.9988,
+    "recall": 0.203,
+    "f1": 0.3375,
+    "tp": 3411,
+    "fp": 4,
+    "fn": 13389,
+    "tn": 4316,
+    "roc_auc": 0.7621
+  },
+  "Stacked Heterogeneous Ensemble": {
+    "precision": 0.9853,
+    "recall": 0.5362,
+    "f1": 0.6945,
+    "tp": 9008,
+    "fp": 134,
+    "fn": 7792,
+    "tn": 4186,
+    "roc_auc": 0.8703
+  },
+  "dataset_origin": "real_tep_kaggle_dat",
+  "Early Warning Audit (Detection Delay)": {
+    "total_test_runs": 22,
+    "faulty_test_runs": 21,
+    "detected_faults": 16,
+    "missed_faults": 5,
+    "detection_rate_pct": 76.2,
+    "detectable_faults_total": 18,
+    "detectable_faults_detected": 16,
+    "detectable_detection_rate_pct": 88.9,
+    "median_detection_delay_samples": 47.5,
+    "median_detection_delay_minutes": 142.5,
+    "pre_onset_false_alarms": 0,
+    "normal_run_false_alarms": 0,
+    "normal_run_fpr_pct": 4.58,
+    "pre_onset_fpr_pct": 2.68
+  }
+}

@@ -1,0 +1,43 @@
+# ==============================================================================
+# Production Dockerfile for TEP Predictive Maintenance Backend
+# Python 3.11-slim with non-root security context and healthchecks
+# ==============================================================================
+FROM python:3.11-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH="/app"
+
+WORKDIR /app
+
+# Install curl for container healthcheck and basic compilation tools if needed
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gcc \
+    g++ \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python production dependencies
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Create unprivileged application user
+RUN useradd -u 1000 -m appuser && \
+    mkdir -p /app/models /app/data && \
+    chown -R appuser:appuser /app
+
+# Copy application codebases
+COPY --chown=appuser:appuser ml /app/ml
+COPY --chown=appuser:appuser backend /app/backend
+COPY --chown=appuser:appuser models /app/models
+
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
