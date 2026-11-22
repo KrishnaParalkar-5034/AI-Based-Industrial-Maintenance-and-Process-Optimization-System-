@@ -14,9 +14,56 @@
 
 ---
 
+## 👥 Project Team & Contributors (Done By)
+
+| Contributor / Engineer | Role & Primary Contributions | GitHub Profile |
+| :--- | :--- | :--- |
+| **Karthikeyan S** | SCADA Platform Architecture, 3-Pillar Heterogeneous Ensemble Calibration, Real TEP Integration, FastAPI Streaming Backend, React P&ID Digital Twin, and End-to-End Verification | [@Karthikeyan-S7](https://github.com/Karthikeyan-S7) |
+| **Krishna Paralkar** | Core Concept & Project Foundation, Streamlit Exploratory Prototype, Initial Risk Threshold Tuning, and Exploratory Data Analysis | [@KrishnaParalkar-5034](https://github.com/KrishnaParalkar-5034) |
+| **Lokesh T A** | Process Control Domain Research, 52-Variable P&ID Mapping, and Feature Engineering | Contributor |
+| **Tejaswi Kanuri** | Signal Quality Monitoring, Data Validation, and Model Evaluation Benchmarking | Contributor |
+| **Namratha** | System Documentation, Quality Assurance, and Testing Review | Contributor |
+
+---
+
+## 🚀 Key Project Updates & New Features
+
+1. **Production-Grade 3-Service SCADA Monorepo:**
+   - **FastAPI Telemetry Backend:** Sub-second REST APIs, WebSocket real-time frame streaming, SQLite WAL / TimescaleDB persistence, and Prometheus metrics (`/metrics`).
+   - **React 18+ TypeScript SPA:** Modern control-room interface with an interactive SVG P&ID Digital Twin, 6 operational console views, and quick `Ctrl+K` Command Palette.
+   - **Machine Learning Core (`ml/`):** Causal feature engineering, signal quality monitoring (frozen sensor, dropout, spike detection), and ANSI/ISA-18.2 deadband alarm management.
+
+2. **Calibrated 3-Pillar Heterogeneous Ensemble:**
+   - **Pillar 1 (XGBoost):** Binary fault detection + 21-class multiclass root-cause fault isolation on 364 multi-scale rolling features ($\mu, \sigma$, skew, EWMA, $\Delta$).
+   - **Pillar 2 (PyTorch LSTM-FCN):** 20-step temporal sequence modeling combining 1D convolutions with recurrent LSTM memory cells to spot slow-creeping drift.
+   - **Pillar 3 (PyTorch Dense Autoencoder):** Unsupervised reconstruction MSE safety net trained exclusively on nominal steady-state data to catch zero-day / unmodeled anomalies.
+   - **Stacked Meta-Learner:** 4-feature meta-learner $[P_{\text{xgb}}, P_{\text{lstm}}, S_{\text{anom}}, P_{\text{multi}}]$ with strict zero-leakage quantile shift calibration (`shift = 2.5951`, `gamma = 1.25`) fitted strictly on validation splits.
+
+3. **Verified Real-TEP Benchmarks (Held-Out Test Set):**
+   - Evaluated across 22 canonical Downs & Vogel test runs (`d00_te` through `d21_te`, 20,480 samples).
+   - **88.9%** detectable fault detection rate (16 of 18 detectable modes).
+   - **47.5 samples (~142.5 min)** median detection delay at 3-min TEP sample intervals.
+   - **4.58%** normal-run FPR on clean run `d00_te` (strictly $< 5.0\%$, eliminating prior false-alarm storms).
+   - **0** normal-run false alarms and **0 / 21 runs** pre-onset false alarms ($t < 160$, 2.68% FPR).
+
+4. **Live AR(1) Simulator with Physical Fault Injection & Recovery:**
+   - Continuous coupled AR(1) plant simulation with dynamic disturbance trajectory blending.
+   - On-demand injection of all 21 TEP benchmark fault modes from any mode (auto-switches to Live Sim and starts streaming immediately).
+   - Active fault badge in persistent header with inline `× Clear` button for continuous AR(1) plant recovery back to `NORMAL`.
+   - Zero right-edge clipping responsive header layout (tested on standard 1366×768 desktop displays with safe margins).
+   - End-of-run auto-rewind on Play ($t \ge 959 \to t = 0$).
+
+5. **Automated Testing & Production Deployment:**
+   - **33 / 33** automated pytest tests passing cleanly across anti-leakage, signal quality, model architecture, and API/WebSocket contracts.
+   - TypeScript strict compilation and Vite bundling (`npm run build` exits `0`).
+   - Multi-stage Docker Compose orchestration with persistent TimescaleDB / PostgreSQL and Nginx reverse proxy.
+   - Google Colab GPU training workflow (`notebooks/train_on_colab.ipynb`).
+
+---
+
 ## 1. System Architecture
 
-The platform provides a production-grade 3-service monorepo alongside the initial exploratory prototype:
+The repository is organized into a clean, decoupled 3-service monorepo alongside the initial exploratory prototype:
 
 ```
 AI-Based-Industrial-Maintenance-and-Process-Optimization-System-/
@@ -42,7 +89,12 @@ AI-Based-Industrial-Maintenance-and-Process-Optimization-System-/
 │   │   │   ├── CockpitView.tsx            # View 1: Plant Cockpit, Health Gauge, Risk Timeline
 │   │   │   ├── TelemetryExplorerView.tsx  # View 2: Multi-channel plots, ±2σ envelopes, flags
 │   │   │   ├── DiagnosticsView.tsx        # View 3: 21-Class isolation, TreeSHAP waterfall
-│   │   │   └── AlarmConsoleView.tsx       # View 4: ISA-18.2 console, notes, handover export
+│   │   │   ├── BenchmarksView.tsx         # View 4: Model benchmarks, KPI cards, Downs & Vogel
+│   │   │   ├── AlarmConsoleView.tsx       # View 5: ISA-18.2 console, notes, handover export
+│   │   │   ├── UtilitiesView.tsx          # View 6: Batch CSV inference, audit trail, hot-reload
+│   │   │   ├── UnitInspectorDrawer.tsx    # Slide-out channel inspection drawer
+│   │   │   ├── CommandPalette.tsx         # Quick navigation modal (Ctrl+K)
+│   │   │   └── Sidebar.tsx                # Collapsible navigation sidebar
 │   │   ├── api.ts                         # Type-safe backend API client
 │   │   ├── useTelemetrySocket.ts          # Sub-second WebSocket live stream hook
 │   │   └── types.ts                       # TypeScript interfaces matching backend contracts
@@ -53,13 +105,14 @@ AI-Based-Industrial-Maintenance-and-Process-Optimization-System-/
 │   ├── Dockerfile.frontend  # Node 22 build -> Alpine Nginx with WebSocket upgrade
 │   └── nginx.conf           # Production reverse proxy for /api, /ws, and SPA routing
 ├── models/                  # Serialized Production Artifacts (Hot-Swappable)
-│   ├── bundle.joblib        # Scaler, calibrated XGBoost binary/multi, meta-learner
-│   ├── lstm_fcn.pt          # PyTorch LSTM-FCN weights
-│   ├── autoencoder.pt       # PyTorch Dense Autoencoder weights
-│   ├── metrics.json         # Full evaluation benchmarks & early-warning audit
-│   └── replay_sample.parquet# 52-channel slim held-out replay runs (22 runs)
+│   ├── bundle.joblib        # Scaler, calibrated XGBoost binary/multi, meta-learner (21 MB)
+│   ├── lstm_fcn.pt          # PyTorch LSTM-FCN weights (1.04 MB)
+│   ├── autoencoder.pt       # PyTorch Dense Autoencoder weights (208 KB)
+│   ├── metrics.json         # Full evaluation benchmarks & early-warning audit (2 KB)
+│   └── replay_sample.parquet# 52-channel slim held-out replay runs (2.47 MB, 22 runs)
 ├── tests/                   # Automated Pytest Suite (Anti-Leakage & Integration)
 ├── docker-compose.yml       # Production 3-container orchestration (TimescaleDB, API, Nginx)
+├── start_local.bat          # One-click Windows local development startup script
 ├── app.py                   # Exploratory Streamlit Dashboard (Prototype)
 └── src/                     # Exploratory prototype pipeline & baseline models
 ```
@@ -129,13 +182,19 @@ uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 # In a separate terminal
 cd frontend
 npm install
-npm run dev
+npm run dev -- --port 3001 --host 127.0.0.1
 ```
-* Open your browser at: `http://localhost:3000`
+* Open your browser at: `http://localhost:3001` (or `http://localhost:3000`)
 * Vite automatically proxies `/api` and `/ws` to `http://localhost:8000` with zero CORS configuration required.
 
-### 3. Exploratory Streamlit Dashboard (Optional):
-The original prototype dashboard remains available for exploratory EDA:
+### 3. One-Click Windows Launcher:
+On Windows, run the included batch script to launch both services in separate consoles:
+```cmd
+start_local.bat
+```
+
+### 4. Exploratory Streamlit Dashboard (Prototype):
+The original prototype dashboard remains available for exploratory EDA and baseline model inspection:
 ```bash
 streamlit run app.py
 ```
@@ -204,66 +263,5 @@ cd frontend && npm run build
 ## 8. License & Acknowledgements
 
 * **License:** MIT License (see [LICENSE](LICENSE)).
+* **Copyright:** (c) 2026 Krishna Paralkar, Karthikeyan S, Lokesh T A, Tejaswi Kanuri, Namratha.
 * **Benchmark Origin:** Downs, J. J., & Vogel, E. F. (1993). *A plant-wide industrial process control problem.* Computers & Chemical Engineering, 17(3), 245-255.
-
----
-
-## 🔧 Pipeline Stages
-
-| Stage | Module | Description |
-|-------|--------|-------------|
-| **1-2** | `data_pipeline.py` | Load raw data, clean, engineer rolling-window features (mean, std, min, max, rate-of-change), scale with StandardScaler, 80/20 train-test split by simulation run |
-| **3** | `ml_models.py` | Train Random Forest, Logistic Regression, XGBoost classifiers + Isolation Forest anomaly detector. Evaluate with Precision/Recall/F1, select best model |
-| **3b** | `sequence_model.py` | *(Optional)* LSTM over 20-step sliding windows for temporal fault detection. Requires PyTorch |
-| **4** | `optimizer.py` | Combine classifier probability (65%) and anomaly score (35%) into a smoothed risk score. Map to NORMAL/WARNING/CRITICAL status. Generate equipment-level recommendations |
-| **5** | `app.py` | Interactive Streamlit dashboard with live telemetry replay, KPI cards, gauge charts, sensor health grid, alert tracking, model evaluation, and decision support |
-
----
-
-## 🖥️ Dashboard
-
-The Streamlit dashboard includes four tabs:
-
-- **📊 Live Overview** — KPI cards, gauge charts (risk + health index), risk score timeline with warning/critical zones, live sensor readings grid
-- **📈 Telemetry** — Per-sensor time series with normal band (±2σ) overlay, 2-column layout
-- **⚠️ Predictions & Alerts** — Alert history table, risk distribution histogram, F1 bar chart, early-warning performance metrics, feature importance
-- **🛠️ Decision Support** — Status-coded recommendations, deviating sensors table, equipment-level maintenance advice
-
-### Dashboard Features
-- Auto-play mode to simulate live data feed
-- Configurable warning/critical thresholds
-- Sensor selection for telemetry display
-- Run summary panel with warnings/criticals count
-
----
-
-## 🛠️ Technologies Used
-
-| Category | Tools |
-|----------|-------|
-| **Language** | Python 3.10+ |
-| **ML/AI** | scikit-learn, XGBoost, PyTorch (optional) |
-| **Data** | pandas, NumPy |
-| **Visualization** | Plotly, Matplotlib |
-| **Dashboard** | Streamlit |
-| **Data Source** | Tennessee Eastman Process (TEP) dataset |
-
----
-
-## 📝 Notes
-
-- Train/test splitting is done by **simulation run** (not random rows) to avoid data leakage
-- The LSTM model (Stage 3b) is evaluated offline and is not part of the live risk score
-- All dashboard recommendations are **advisory only** — any action requires qualified plant personnel
-
-
-
-*Built as a decision-support prototype for industrial maintenance and process optimization.*
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
-Copyright (c) 2026 Krishna Paralkar
