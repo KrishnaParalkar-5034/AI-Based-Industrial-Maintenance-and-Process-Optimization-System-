@@ -9,14 +9,37 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
 
-# Generated model artifacts and outputs (re-generate with train_model.py)
-models/
+# Node & Frontend
+node_modules/
+frontend/dist/
+frontend/.cache/
+frontend/.vite/
+
+# Large Model Archives & Transient Bundles (>25MB)
+models/tep_artifacts.zip
+models/*.zip
+models/*.gz
 outputs/
 
 # Data files (too large for git; see README for download instructions)
 data/*.csv
 data/*.dat
+
+# Databases & Runtime State
+*.db*
+*.sqlite*
+backend/app.db*
+tests/test_*.db*
+tep_historian.db*
+
+# Environment & Credentials
+.env
+.env.*
+kaggle.json
+*.pem
+*.key
 
 # Streamlit / OS / editor
 .streamlit/secrets.toml
@@ -26,3 +49,15 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Temporary Test & Audit Scripts
+audit_models.py
+pre_push_audit_report.md
+*_verification_report.md
+*_audit_report.md
+phase_*_report.md
+real_tep_production_report.md
+live_sim_investigation_and_fix_report.md
+
+# Logs
+*.log
