@@ -42,18 +42,45 @@ class BaseTelemetryAdapter(ABC):
 class TEPReplayAdapter(BaseTelemetryAdapter):
     """
     Replay adapter streaming pre-computed held-out TEP test runs (real or synthetic).
-    Supports time scrubbing, jumping, and switching between runs.
+    Supports time scrubbing, jumping, switching between runs, and a built-in
+    cyclic standard demo scenario (Normal -> Warning -> Critical -> Recovery -> Normal).
     """
     def __init__(self, test_df: pd.DataFrame, window_len: int = 50):
         self.test_df = test_df.copy()
         self.window_len = window_len
         self.runs = sorted(self.test_df["run_id"].unique())
+        self._demo_cycle_df: Optional[pd.DataFrame] = None
+        
+        # Build Standard Demo Cycle if F0 and F1 exist
+        has_f0 = "F0_R1_d00_te" in self.test_df["run_id"].values
+        has_f1 = "F1_R1_d01_te" in self.test_df["run_id"].values
+        if has_f0 and has_f1:
+            try:
+                sub_f0 = self.test_df[self.test_df["run_id"] == "F0_R1_d00_te"].sort_values("sample").reset_index(drop=True)
+                sub_f1 = self.test_df[self.test_df["run_id"] == "F1_R1_d01_te"].sort_values("sample").reset_index(drop=True)
+                part1 = sub_f0.iloc[20:45].copy()    # 25 normal baseline steps
+                part2 = sub_f1.iloc[170:190].copy()  # 20 incipient drift & critical steps
+                part3 = sub_f0.iloc[45:90].copy()    # 45 simulated recovery & stabilization steps
+                cycle_raw = pd.concat([part1, part2, part3], ignore_index=True)
+                cycle_raw["sample"] = np.arange(len(cycle_raw), dtype=int)
+                cycle_raw["run_id"] = "STANDARD_DEMO_CYCLE"
+                sensor_cols = [c for c in TEP_SENSOR_NAMES if c in cycle_raw.columns]
+                self._demo_cycle_df = compute_causal_features(cycle_raw, sensor_cols)
+                self.runs = ["STANDARD_DEMO_CYCLE"] + [r for r in self.runs if r != "STANDARD_DEMO_CYCLE"]
+            except Exception as ex:
+                print(f"[TEPReplayAdapter] Standard demo cycle build deferred: {ex}")
+
         self.current_run_id: str = self.runs[0] if self.runs else "RUN_00"
         self._cached_run_df: pd.DataFrame = pd.DataFrame()
         self._onset_step: Optional[int] = None
         self._load_cached_run()
 
     def _load_cached_run(self):
+        if self.current_run_id == "STANDARD_DEMO_CYCLE" and self._demo_cycle_df is not None:
+            self._cached_run_df = self._demo_cycle_df
+            self._onset_step = 25
+            return
+
         sub = self.test_df[self.test_df["run_id"] == self.current_run_id].sort_values("sample").reset_index(drop=True)
         # Compute multi-scale causal features on-the-fly if not precomputed in slim parquet (~40ms once per run)
         has_human_features = "A Feed Flow_m10" in sub.columns
@@ -86,7 +113,7 @@ class TEPReplayAdapter(BaseTelemetryAdapter):
 
     def get_step_data(self, step: int) -> Tuple[pd.Series, pd.DataFrame, Optional[int]]:
         total = len(self._cached_run_df)
-        safe_step = max(0, min(step, total - 1))
+        safe_step = (step % total) if total > 0 else 0
         curr_row = self._cached_run_df.iloc[safe_step]
         # Return trailing window for rolling/frozen checks
         start_idx = max(0, safe_step - self.window_len + 1)

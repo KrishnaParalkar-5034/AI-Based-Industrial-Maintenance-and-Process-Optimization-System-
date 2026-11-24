@@ -307,7 +307,8 @@ async def websocket_telemetry_stream(websocket: WebSocket):
                     engine_instance.current_step += 1
                     is_advance = True
                 else:
-                    engine_instance.is_playing = False # Pause at end of run
+                    engine_instance.current_step = 0 # Loop continuously for seamless presentation demos
+                    is_advance = True
 
             current_key = (
                 engine_instance.adapter.get_current_run_id() if engine_instance.adapter else "",

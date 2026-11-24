@@ -45,8 +45,8 @@ class ProcessInferenceEngine:
         self.adapter: Optional[BaseTelemetryAdapter] = None
         self.alarm_mgr = ISA18AlarmManager()
 
-        # Playback state
-        self.is_playing: bool = False
+        # Playback state (auto-play by default for presentation demos)
+        self.is_playing: bool = True
         self.playback_speed: float = 1.0 # 1 sample per second base
         self.current_step: int = 0
         self.model_mode: str = "stacked_ensemble" # stacked_ensemble, xgboost, anomaly
@@ -321,6 +321,15 @@ class ProcessInferenceEngine:
                             status="ACTIVE"
                         )
                         db.add(new_alarm)
+
+                    # If transitioning back to NORMAL, auto-resolve active alarms
+                    if regime == "NORMAL" and alarm_eval["previous_regime"] in ["WARNING", "CRITICAL"]:
+                        active_alarms = db.query(Alarm).filter(Alarm.status == "ACTIVE").all()
+                        for act in active_alarms:
+                            act.status = "RESOLVED"
+                            act.operator_note = "Auto-resolved: Process telemetry normalized below ISA-18.2 deadband."
+                            act.updated_at = now_dt
+
                     db.commit()
                 self.last_persisted_run_step = (run_id, step)
             except Exception as exc:
